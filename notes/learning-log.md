@@ -98,3 +98,41 @@
 下一步：
 
 - 跟做 `projects/langchain-academy/module-1/`，顺序：simple-graph → chain → router → agent → agent-memory。
+
+---
+
+## 2026-06-15（Phase 2 完成）
+
+目标：
+
+- 跟做 module-1，完成 simple-graph → chain → router → agent → agent-memory 全链路。
+
+今日记录：
+
+- `minimal_llm_graph.py`：最小 LLM 图，`MessagesState` 作为 state，单节点调 LLM，理解 messages 字段的追加语义。
+- `tool_calling.py`：`bind_tools` 入门——LLM 知道工具存在，可以发出 tool_call，但图在 tool_call 后直接到 END，不执行工具，不循环。
+- `chain.py`：两节点串联，`add_system_prompt → call_llm`，体会节点只做一件事的设计原则。
+- `router.py`：加入 `ToolNode`，`call_llm → (conditional) → tools → END`。工具执行了，但结果不回 LLM，是单次调用，不是循环。
+- `agent.py`：完整 ReAct 循环，`tools → "assistant"` 而非 `tools → END`，使用 `tools_condition` 判断是否继续。LLM 可以多次调工具直到不再需要为止。
+- `agent_memory.py`：给 agent 加 `MemorySaver` + `thread_id`，实现跨轮记忆。
+
+关键理解：
+
+- `MessagesState` 内置 `add_messages` reducer，`invoke()` 传入新消息是**追加**，不是覆盖；返回值是整个 thread 的 state 快照。
+- router 和 agent 的本质区别：`tools → END`（单次） vs `tools → "assistant"`（循环）。
+- `MemorySaver` 把每一轮的完整 state 存成 checkpoint；`thread_id` 是隔离边界，同一 thread 共享历史，不同 thread 互不感知。
+- `compile(checkpointer=memory)` 后，每次 `invoke` 都会先从 checkpoint 加载该 thread 的历史 state，执行完再保存新 checkpoint。
+
+**Phase 2 验收**：
+
+- tool call：LLM 发出带参数的工具调用请求，写入 state messages。
+- observation：`ToolNode` 执行工具，把结果作为 `ToolMessage` 追加到 state。
+- final answer：LLM 读到 ToolMessage，不再发 tool_call，返回最终文本，`tools_condition` 路由到 END。
+- 三者都存在 `state["messages"]` 里，按时间顺序追加，checkpointer 持久化整个序列。
+
+卡点：无。
+
+下一步（Phase 3）：
+
+- 自定义 State 字段（不只用 `MessagesState`），设计"学习助教 agent"的短期记忆结构。
+- 深入理解 `get_state()`、`get_state_history()`、`update_state()`。
