@@ -78,3 +78,23 @@
 
 - 配置 `.env`（当前示例使用 Anthropic 兼容接口）。
 - 用工具调用实现 ReAct 风格循环。
+
+---
+
+## 2026-06-15（环境完善 + 开始 Module 1）
+
+目标：
+
+- 配置好跟做 LangChain Academy 的完整环境。
+
+今日记录：
+
+- `.env` 配置完成，使用 Anthropic 兼容接口（`ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY`），`LANGSMITH_TRACING=false`。
+- 安装了 `jupyter`、`langchain-anthropic`、`langchain-community`、`langgraph-checkpoint-sqlite` 等全套依赖。
+- venv 注册为 Jupyter kernel（名称：`Python (LearnLangGraph)`）。
+- LangChain Academy 课程仓库放在 `projects/langchain-academy/`，只读参考，已加入 `.gitignore`。
+- 跟做 notebook 时遇到 `ChatOpenAI` 一律换成 `ChatAnthropic(model=os.getenv("MODEL_ID"), base_url=os.getenv("ANTHROPIC_BASE_URL"))`。
+
+下一步：
+
+- 跟做 `projects/langchain-academy/module-1/`，顺序：simple-graph → chain → router → agent → agent-memory。

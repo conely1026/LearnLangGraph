@@ -20,12 +20,24 @@
 
 地址：https://academy.langchain.com/courses/intro-to-langgraph
 
-用途：
+本地路径：`projects/langchain-academy/`
 
-- 最推荐的第一门课
-- 模块化学习基础 graph、router、agent、memory、deployment
+跟做顺序（module-1）：
 
-配套代码：https://github.com/langchain-ai/langchain-academy
+```
+simple-graph.ipynb
+chain.ipynb
+router.ipynb
+agent.ipynb
+agent-memory.ipynb
+```
+
+注意：notebook 里用 `ChatOpenAI`，跟做时替换为：
+
+```python
+from langchain_anthropic import ChatAnthropic
+llm = ChatAnthropic(model=os.getenv("MODEL_ID"), base_url=os.getenv("ANTHROPIC_BASE_URL"))
+```
 
 ### LangGraph 101
 
