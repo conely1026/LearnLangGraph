@@ -31,7 +31,9 @@ notepad .env
 至少需要：
 
 ```text
-OPENAI_API_KEY=你的 key
+ANTHROPIC_API_KEY=你的 key
+ANTHROPIC_BASE_URL=https://ai.leihuo.netease.com/
+MODEL_ID=claude-sonnet-4-6
 ```
 
 LangSmith 是可选的，但建议学习中期开启，用来观察 graph 的执行过程。

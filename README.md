@@ -42,7 +42,7 @@ python src\hello_graph.py
 
 本机默认 `python` 可能指向更新版本。LangGraph 学习阶段建议优先使用 Python 3.11 或 3.12。
 
-如果后面要接入 OpenAI 或其他模型：
+如果后面要接入 Anthropic 兼容模型或其他模型：
 
 ```powershell
 Copy-Item .env.example .env

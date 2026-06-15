@@ -35,6 +35,27 @@ Conditional edge 是 LangGraph 很重要的能力。它让 agent 可以根据执
 - 结束
 - 交给另一个 agent
 
+用法模板：
+
+```python
+from typing import Literal
+
+# 路由函数：只读 state，只返回节点名，不修改 state
+def route(state: MyState) -> Literal["node_a", "node_b"]:
+    if state["some_field"] == "foo":
+        return "node_a"
+    return "node_b"
+
+graph.add_conditional_edges("entry_node", route)
+```
+
+典型图结构（钻石形）：
+
+```
+entry_node → (route) → node_a ─┐
+                      → node_b ─┘→ merge_node → END
+```
+
 ## Checkpoint
 
 Checkpoint 保存 graph 的中间状态。它让长任务可以恢复，也让多轮会话可以沿着同一条 thread 继续。
