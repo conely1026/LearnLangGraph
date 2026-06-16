@@ -136,3 +136,40 @@
 
 - 自定义 State 字段（不只用 `MessagesState`），设计"学习助教 agent"的短期记忆结构。
 - 深入理解 `get_state()`、`get_state_history()`、`update_state()`。
+
+---
+
+## 2026-06-16（Module-2 State & Memory 概念梳理）
+
+目标：
+
+- 跟读 module-2 notebook，理解 state schema、reducer、multiple schemas、memory 架构。
+
+今日记录：
+
+**State Schema 三种写法：**
+- `TypedDict`：纯静态类型提示，无默认值，无运行时校验，学习/原型首选。
+- `@dataclass`：支持 `field(default_factory=...)` 默认值，字段多时减少 invoke 传参负担；裸写 `list = []` 会共享同一对象（等价 C++ static 成员），必须用 `field(default_factory=list)`。
+- `Pydantic BaseModel`：运行时强校验类型，生产环境防御用。
+
+**Reducer：**
+- 无 `Annotated` → 节点返回值直接覆盖字段。
+- `Annotated[list, add_messages]` → 追加，同 id 的消息替换而非追加。
+- `Annotated[list, 自定义函数]` → 自定义合并逻辑。
+- `add_messages` 实现：两端都 coerce 成 list，无 id 的消息自动补 UUID，用 dict 做 O(1) id 查重，`RemoveMessage` 可删除指定消息，`REMOVE_ALL_MESSAGES` 清空历史。
+- `None` 不做守卫，由外层 `_add_messages` 拦截；正常用法不会传 None。
+
+**Multiple Schemas：**
+- `PrivateState`：只在特定节点间流转的中间字段，不进 `OverallState`，执行完自动消失。
+- `input_schema` / `output_schema`：在 `StateGraph(OverallState, input_schema=InputState, output_schema=OutputState)` 处声明，对图的入口和出口做字段过滤，内部节点仍用完整 `OverallState`。
+
+**Memory 两层架构：**
+- 短期（checkpointer）：state 快照按 `thread_id + checkpoint_id` 存储，同 thread invoke 直接取最新，key-value 查找，无检索。
+- 长期（store）：按 `namespace + key` 存储，支持精确查找和语义检索（向量化相似度搜索），跨 thread 持久化，适合存用户偏好、知识库。
+
+卡点：无。
+
+下一步：
+
+- 继续 module-2 剩余内容（trim_messages、长期记忆 store）。
+- Phase 3 收尾：写 `learning_assistant.py`，自定义 State + MemorySaver。
