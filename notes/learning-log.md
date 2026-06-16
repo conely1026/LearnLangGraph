@@ -173,3 +173,70 @@
 
 - 继续 module-2 剩余内容（trim_messages、长期记忆 store）。
 - Phase 3 收尾：写 `learning_assistant.py`，自定义 State + MemorySaver。
+
+---
+
+## 2026-06-16（Module-2 收尾：消息管理 + 持久化）
+
+目标：
+
+- 跟读 module-2 剩余三章：trim-filter-messages、chatbot-summarization、chatbot-external-memory。
+
+今日记录：
+
+**消息管理三种策略（trim-filter-messages）：**
+- `RemoveMessage`：改 State 本身，物理删除旧消息，适合真的不需要保留历史。
+- 切片 `messages[-n:]`：不改 State，传给 LLM 时截断，按条数控制，粗糙。
+- `trim_messages`：不改 State，按 token 数裁剪，`strategy="last"` 保留最新，精度更高。
+- 三者都是"原语"，实际按场景选：实时战斗 AI 用 trim，NPC 对话记忆用 summarization。
+
+**摘要记忆（chatbot-summarization）：**
+- State 扩展 `summary: str` 字段，存压缩后的旧对话。
+- `call_model`：有摘要时作为 SystemMessage 前置，LLM 收到"摘要 + 最近消息"。
+- `summarize_conversation`：messages + "请总结" 发给 LLM，结果写入 `summary`，然后 `RemoveMessage` 只留最后 2 条。
+- 摘要是续写不是重写，`should_continue` 超 6 条才触发，配合 MemorySaver 跨轮持久。
+
+**外部持久化（chatbot-external-memory）：**
+- 把 `MemorySaver` 换成 `SqliteSaver(conn)`，图逻辑一行不改。
+- Checkpointer 可插拔：MemorySaver → SqliteSaver → PostgresSaver，上层无感知。
+- 对应游戏存档：每个玩家 thread_id 是存档 ID，切换 checkpointer 不改 agent 代码。
+
+**Module-2 全部完成**：6 个 notebook 跟读完毕。
+
+卡点：无。
+
+下一步：
+
+- Phase 3 收尾：写 `src/phase-3/learning_assistant.py`，自定义 State + MemorySaver。
+- 跟读 Module-3：Human-in-the-loop（breakpoints、edit-state、time-travel）。
+
+---
+
+## 2026-06-16（Phase 3 完成：learning_assistant.py）
+
+目标：
+
+- 实现 `src/phase-3/learning_assistant.py`，整合自定义 State、摘要记忆、SqliteSaver 持久化。
+
+今日记录：
+
+**自定义 State：**
+- `LearningState` 继承 `MessagesState`，扩展 `topic`、`level`、`summary` 三个字段。
+- `topic/level` 通过 `graph.update_state()` 在首次启动时写入，后续从 checkpoint 读取，不用每轮传递。
+
+**节点实现：**
+- `call_model`：把 topic/level/summary 拼成 system prompt，summary 追加在角色定位之后而非单独一条 SystemMessage。
+- `summarize_conversation`：首次生成/续写摘要，删旧消息只留最后 2 条。
+
+**持久化：**
+- 用 `SqliteSaver` 替换 `MemorySaver`，db 固定在项目根目录 `state_db/learning_assistant.db`，用 `__file__` 定位路径，不依赖运行时工作目录。
+- 同一个 db 可存多个 thread，靠 `thread_id` 隔离，对应游戏多玩家存档场景。
+
+**config 传递规律：**
+- 凡是和持久化 state 交互的操作都要传 config：`invoke`、`get_state`、`update_state`、`stream`、`get_state_history`。
+
+**Phase 3 验收：**
+- 能解释 thread_id / checkpoint / state snapshot 三者关系：thread_id 是隔离边界，每次 invoke 生成一个 checkpoint（state 快照），同 thread 的所有 checkpoint 构成完整历史。
+
+**下一步：**
+- Module-3：Human-in-the-loop（breakpoints、edit-state、time-travel）。

@@ -57,7 +57,7 @@
 
 - 能解释 tool call、observation、final answer 如何被 state 串起来。
 
-## 第 3 阶段：持久化、检查点和记忆（进行中）
+## 第 3 阶段：持久化、检查点和记忆 ✅
 
 目标：让 graph 可以恢复、追踪和跨轮对话。
 
