@@ -81,6 +81,12 @@ D:\LearnLangGraph
 - 官方模板 react-agent: https://github.com/langchain-ai/react-agent
 - 官方项目 open_deep_research: https://github.com/langchain-ai/open_deep_research
 
+## 学习记录与分享
+
+- 阶段学习记录：[notes/learning-record.md](notes/learning-record.md)
+- 每日学习日志：[notes/learning-log.md](notes/learning-log.md)
+- 可分享知识稿：[docs/06-knowledge-share.md](docs/06-knowledge-share.md)
+
 ## 第一周建议
 
 1. 跑通本仓库的最小 graph。

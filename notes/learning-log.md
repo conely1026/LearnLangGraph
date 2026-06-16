@@ -240,3 +240,34 @@
 
 **下一步：**
 - Module-3：Human-in-the-loop（breakpoints、edit-state、time-travel）。
+
+---
+
+## 2026-06-16（Phase 4 进行中：Human-in-the-loop + 人设项目 + 流式）
+
+目标：
+
+- 跟读 Module-3 的 breakpoints / edit-state-human-feedback / streaming，并落两个练习。
+
+今日记录：
+
+- `src/phase-4/human_review.py`：审批 agent。`compile(interrupt_before=["tools"])` 在调工具前中断，支持 approve / edit / reject 三条路径。
+- `src/phase-4/su_shi.py`：历史人物（苏轼）人设 agent。`classify` 节点判意图写入 `state["intent"]`，conditional edge 分流到 quote（引用真迹）/ create（即兴代拟）/ chat（闲谈）三个节点，各用不同系统提示。后改成流式聊天。
+
+关键理解：
+
+- **interrupt + resume**：断点本质是把当前 state 存成 checkpoint 再 return；用 `graph.stream(None, thread)` 从该 checkpoint 续跑（input 传 `None` = 不加新输入，从 `state.next` 继续）。所以中断前后 state 从没丢，只是执行流被挂起。必须配 checkpointer。
+- **看/改中断点**：`get_state(thread).next` 非空即被中断；`update_state(thread, {...})` 改 state，`messages` 字段走 `add_messages` reducer（无 id 追加 / 带 id 覆盖）；`as_node="X"` 可把更新假装成某节点的输出。
+- **创作 vs 引用边界**：人设 agent 必须区分「即兴代拟」和「引用真迹」，前者强制标注非真迹，后者不确定就坦白、绝不编造。逐字引用准确性留给 Phase 5 RAG。
+- **streaming 三模式**：`values`（每节点后完整 state）/ `updates`（增量更新）/ `messages`（节点内 LLM 逐 token，给 `(chunk, metadata)`）。组合 `stream_mode=["updates","messages"]` 可同时拿状态和 token。
+- **token 过滤靠 `metadata["langgraph_node"]`**：多节点图里每个调 LLM 的节点都会吐 token，su_shi 的 classify 节点也会流出「引用/创作/闲聊」标签 token，必须按 langgraph_node 只放行回答节点。教材的等价异步写法是 `astream_events(version="v2")` 过滤 `on_chat_model_stream`。
+
+卡点：
+
+- `get_state_history()` 如何用于 time-travel 回放，还没动手。
+- 多个 tool_call 同时出现时，reject 分支只补了第一个 ToolMessage（已在代码里标注为练习点）。
+
+下一步：
+
+- 收尾 Module-3：跟读 `time-travel`，用 `get_state_history()` 回到历史 checkpoint 重跑。
+- 之后 Phase 5：把 `su_shi.py` 升级成 RAG 版，解决逐字引用准确性。
