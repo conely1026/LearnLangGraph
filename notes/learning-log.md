@@ -271,3 +271,35 @@
 
 - 收尾 Module-3：跟读 `time-travel`，用 `get_state_history()` 回到历史 checkpoint 重跑。
 - 之后 Phase 5：把 `su_shi.py` 升级成 RAG 版，解决逐字引用准确性。
+
+---
+
+## 2026-06-17（Phase 4 完成：Module-3 全过 + 20 题巩固测验）
+
+目标：
+
+- 跟读 Module-3 剩余两章（dynamic-breakpoints、time-travel），并出题巩固整个 Module-3。
+
+今日记录：
+
+- **dynamic-breakpoints**：节点内 `raise NodeInterrupt(msg)` 按运行时条件中断。最大坑——直接 `stream(None)` 续跑会**重跑该节点**，条件没变就再次中断、原地卡死；必须先 `update_state` 改掉触发条件再续跑。
+- **time-travel**：`get_state_history(thread)` 取全部历史快照（新→旧）；快照 `.config` 里的 `checkpoint_id` 是钥匙。Replay = 把没改过的旧 config 传回 `stream(None, config)`；Fork = 先 `update_state(snap.config, 带原id覆盖)` 生成新分支再跑。判定 replay/fork 的唯一依据：传回旧 config 前有没有 update_state 改过。
+- 出了 20 题测验（概念 / 读代码 / 场景诊断），逐题批改。
+
+关键理解（测验校准后）：
+
+- **中断三件套**：`interrupt_before` + `checkpointer` + `thread_id`，缺 checkpointer 中断会静默失效。
+- **interrupt_before vs NodeInterrupt 的续跑行为**：前者 stream(None) 迈过门口往下走；后者 stream(None) 重跑节点，条件不消就再次中断。
+- **追加 vs 覆盖看消息 id**，与 thread_id 无关。
+- **messages 流模式会流出每个调 LLM 节点的 token**（苏轼的 classify 也会吐“引用/创作/闲聊”标签），必须按 `metadata["langgraph_node"]` 过滤。
+- **as_node 伪造节点产出**：reject 路径用 `as_node="tools"` 塞 ToolMessage 跳过真执行，但 `tool_call_id` 必须对上原 tool_call。
+
+卡点（测验暴露，已记入 module3-pitfalls.md）：
+
+- checkpointer 是中断的前提，最初没意识到。
+- as_node + tool_call_id 配对规则还需多练。
+- 看题习惯：消息类型（AIMessage 带 tool_calls ≠ tool_use 块）、数字（5×3 不是 5×5）。
+
+下一步：
+
+- 进入 Phase 5 RAG：跟做官方 retrieval-agent / rag-research-agent 模板，把苏轼升级成检索增强版。

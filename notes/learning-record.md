@@ -6,7 +6,7 @@
 
 ## 当前进度
 
-- 当前阶段：Phase 4 Human-in-the-loop 进行中（已做审批 + 人设项目 + 流式，剩 time-travel）。
+- 当前阶段：Phase 4 Human-in-the-loop 完成（Module-3 全部跟读 + 20 题测验），准备进入 Phase 5 RAG。
 - 当前主线：从基础 `StateGraph` 走到 LLM、工具调用、agent loop、checkpoint、短期记忆、SQLite 持久化，再到中断/恢复与流式输出。
 - 当前代码产出：
   - `src/phase-0/hello_graph.py`：最小图和 conditional edge 入门。
@@ -110,30 +110,33 @@ Agent 不神秘。它的本质是：
 
 ## 仍然需要继续巩固的问题
 
-- `update_state()` 在 human-in-the-loop 场景下具体如何修改中断点 state？
-- `get_state_history()` 返回的 checkpoint 历史如何用于 time travel？
-- 什么时候应该用 `interrupt()`，什么时候只需要普通节点等待输入？
-- 长期 store 的 namespace / key 应该如何设计，才不会变成杂乱缓存？
-- 从脚本走向 LangGraph Server 时，项目结构应该怎样拆？
+已解决（Module-3 跟读 + 20 题测验）：
+
+- ✅ `update_state()` 改中断点 state：`messages` 走 add_messages reducer，**不带 id 追加 / 带原 id 覆盖**；`as_node="X"` 可把更新当作 X 节点的产出。
+- ✅ `get_state_history()` 用于 time travel：取历史快照的 `.config`（带 checkpoint_id）传回 `stream(None, config)` 即 replay；先 `update_state` 改再跑则 fork。
+- ✅ 何时用 `interrupt`：固定卡点用 `interrupt_before`（如每次调工具审批）；按运行时条件用 `NodeInterrupt`（节点内 raise）。
+
+仍待巩固（测验暴露的薄弱点）：
+
+- **中断三件套**：`interrupt_before` + `checkpointer` + `thread_id`，缺 checkpointer 则中断静默失效。
+- `as_node="tools"` 伪造工具产出时，`ToolMessage` 的 `tool_call_id` 必须对上原 tool_call，否则 API 报“缺响应”。
+- 长期 store 的 namespace / key 应该如何设计，才不会变成杂乱缓存？（Phase 5/6）
+- 从脚本走向 LangGraph Server 时，项目结构应该怎样拆？（Phase 7）
 
 ## 下一步
 
-### Phase 4：Human-in-the-loop（进行中）
-
-已完成：
+### Phase 4：Human-in-the-loop ✅ 完成
 
 - 跑通 interrupt / resume：`interrupt_before` 中断 + `stream(None)` 续跑。
 - `src/phase-4/human_review.py`：审批 agent，approve / edit / reject 三路径。
 - `src/phase-4/su_shi.py`：苏轼人设 agent，意图分流 + 流式聊天。
+- Module-3 全部 5 个 notebook 跟读完毕（breakpoints / edit-state / dynamic-breakpoints / streaming / time-travel），并做了 20 题巩固测验，易错点见 `notes/module3-pitfalls.md`。
 
-剩余：
+### Phase 5：RAG（下一阶段，已规划主线）
 
-- 跟读 `time-travel`，用 `get_state_history()` 回到历史 checkpoint 重跑，理解回放与分叉。
-- （可选）补 dynamic-breakpoints：节点内用 `NodeInterrupt` 按条件动态中断。
-
-### Phase 5：RAG（已规划主线）
-
-- 把 `su_shi.py` 升级成 RAG 版：建苏轼语料库，引用基于检索到的真实文本，解决逐字引用准确性。
+- 目标：完成“检索资料 → 归纳引用 → 生成结构化答案”的闭环。
+- 主线项目：把 `su_shi.py` 升级成 RAG 版——建苏轼语料库，引用基于检索到的真实文本，解决逐字引用准确性。
+- 跟做资源：官方 `retrieval-agent-template`、`rag-research-agent-template`。
 
 ## 每次学习后怎么更新
 
